@@ -42,8 +42,9 @@ class Timer(Thread):
 class MessageHandler(object):
     MAX_CONNECTIONS = 10
     PORT = 20236
-    # IP_ADDRESS = '147.46.241.102'
-    IP_ADDRESS = ''
+    IP_ADDRESS = '147.46.241.102'
+
+    # IP_ADDRESS = ''
 
     def __init__(self):
         self.initialize()
@@ -137,7 +138,9 @@ class MessageHandler(object):
             return Message('success', 0, 0, "Registered. Please login")
 
     def login(self, username, password):
-        if username in user_table and user_table[username] == password:
+        if username in users_online:
+            return Message('fail', 0, 0, "User is already connected")
+        elif username in user_table and user_table[username] == password:
             return Message('success', 0, 0, "Welcome")
         else:
             return Message('fail', 0, 0, "Incorrect information. Try again")
