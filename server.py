@@ -5,7 +5,7 @@ from threading import Thread
 
 from protocol import Message
 
-sock, peers = None, []
+sock = None
 id_peer_map = {}
 user_table = {}
 users_online = {}
@@ -73,14 +73,24 @@ class MessageHandler(object):
         def run(self):
             peer, addr = sock.accept()
             print("accepted:", addr)
-            peers.append(peer)
             id_peer_map[self.ident] = peer
             while True:
-                byte_message = peer.recv(1024)
-                message = pickle.loads(byte_message)
-                response = self.message_handler.handle_message(message, self.ident)
-                if response is not None:
-                    peer.send(pickle.dumps(response))
+                try:
+                    byte_message = peer.recv(1024)
+                    message = pickle.loads(byte_message)
+                    response = self.message_handler.handle_message(message, self.ident)
+                    if response is not None:
+                        peer.send(pickle.dumps(response))
+                except EOFError:
+                    peer.close()
+                    print("closed:", addr)
+                    online_ids = list(users_online.values())
+                    if self.ident in online_ids:
+                        username = list(users_online.keys())[online_ids.index(self.ident)]
+                        del users_online[username]
+                    peer, add = sock.accept()
+                    print("accepted:", addr)
+                    id_peer_map[self.ident] = peer
 
     def handle_message(self, message, ident):
         if message.type == 'message':
@@ -210,5 +220,5 @@ try:
 
 except KeyboardInterrupt:
     sock.close()
-    for peer in peers:
+    for peer in id_peer_map.values():
         peer.close()
