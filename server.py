@@ -122,6 +122,7 @@ class MessageHandler(object):
         elif message.type == 'read_msg':
             self.mark_read(message.sender_id, message.receiver_id)
         elif message.type == 'signout':
+            print("sign out:", message.sender_id)
             del users_online[message.sender_id]
 
     def send_message(self, sender, receiver, payload):
@@ -145,12 +146,14 @@ class MessageHandler(object):
         else:
             user_table[username] = password
             friends_list[username] = []
+            print("registered a user:", username)
             return Message('success', 0, 0, "Registered. Please login")
 
     def login(self, username, password):
         if username in users_online:
             return Message('fail', 0, 0, "User is already connected")
         elif username in user_table and user_table[username] == password:
+            print("sign in:", username)
             return Message('success', 0, 0, "Welcome")
         else:
             return Message('fail', 0, 0, "Incorrect information. Try again")
@@ -212,11 +215,7 @@ message_handler = MessageHandler()
 
 try:
     while True:
-        message = input('')
-        # if (message == "ping"):
-        #     message_handler.ping()
-        # byt = message.encode()
-        # messageHandler.send_message(byt)
+        time.sleep(1)
 
 except KeyboardInterrupt:
     sock.close()
