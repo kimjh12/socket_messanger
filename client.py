@@ -200,7 +200,7 @@ class MainWindow(QMainWindow, form_class):
         self.reply_thread.terminate()
         login_dialog = LoginDialog()
         login_dialog.show()
-        if login_dialog.exec_() == QDialog.Accepted:
+        if login_dialog.exec() == QDialog.Accepted:
             main_window.__init__()
             main_window.show()
 
@@ -251,13 +251,15 @@ class LoginDialog(QDialog, form_login):
         password = self.password.text()
         response = message_sender.request_signup(username, password)
         self.textLabel.setText(response.payload)
-
+    
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     message_sender = MessageSender()
     login_dialog = LoginDialog()
-    if login_dialog.exec_() == QDialog.Accepted:
+    if login_dialog.exec() == QDialog.Accepted:
         main_window = MainWindow()
         main_window.show()
+    else:
+        sys.exit()
 
     sys.exit(app.exec())
