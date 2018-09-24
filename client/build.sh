@@ -1,2 +1,1 @@
-pyinstaller --onefile client.py
-cp *.ui dist/
+pyinstaller --onefile client.spec

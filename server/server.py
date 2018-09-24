@@ -7,15 +7,22 @@ from protocol import Message
 
 sock = None
 id_peer_map = {}
-user_table = {}
-users_online = {}
-pending_requests = {}
-friends_list = {}
 
+user_table = {}
+# maps username and password
+# TODO : encryption
+
+users_online = {}
+# users_online: { user1: thread id, ... }
+
+pending_requests = {}
+# pending_requests: { user1: Message, ...}
+
+friends_list = {}
+# friends_list : { user1: [ user2, user3, ... ], ...}
 
 message_logs = {}
-
-# messageLogs :
+# message_logs :
 #     {
 #         (user1, user2) : [
 #             [ sender, payload, unread1, unread2 ], ...
@@ -23,11 +30,12 @@ message_logs = {}
 #         ...
 #     }
 
+
+# Returns unique pair of two users
 def get_tuple(first, second):
     return (first, second) if first < second else (second, first)
 
-
-
+# Timer thread
 class Timer(Thread):
     def __init__(self, parent):
         Thread.__init__(self)
@@ -57,6 +65,7 @@ class MessageHandler(object):
         timer.daemon = True
         timer.start()
 
+    # Initialize socket
     def initialize(self):
         global sock
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -65,6 +74,7 @@ class MessageHandler(object):
         print("listening...")
         sock.listen(10)
 
+    # Thread connecting to clients
     class Connection(Thread):
         def __init__(self, message_handler):
             self.message_handler = message_handler
@@ -82,6 +92,7 @@ class MessageHandler(object):
                     if response is not None:
                         peer.send(pickle.dumps(response))
                 except EOFError:
+                    # this happens when client app closed
                     peer.close()
                     print("closed:", addr)
                     online_ids = list(users_online.values())
@@ -92,6 +103,7 @@ class MessageHandler(object):
                     print("accepted:", addr)
                     id_peer_map[self.ident] = peer
 
+    # Handling message from client
     def handle_message(self, message, ident):
         if message.type == 'message':
             self.send_message(message.sender_id, message.receiver_id, message.payload)
@@ -125,7 +137,9 @@ class MessageHandler(object):
             print("sign out:", message.sender_id)
             del users_online[message.sender_id]
 
+    # Send text message to receiver
     def send_message(self, sender, receiver, payload):
+        # struct: [sender, text, user1_unread, user2_unread]
         msg_struct = [sender, payload, 1, 1]
         i = 2 if sender < receiver else 3
         msg_struct[i] = 0

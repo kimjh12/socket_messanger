@@ -5,6 +5,7 @@ import pickle
 
 from protocol import Message
 
+import os
 import sys
 import time
 from PyQt5.QtWidgets import *
@@ -17,18 +18,29 @@ PORT = 20236
 
 BUFFER_LENGTH = 1024
 
-form_class = uic.loadUiType("main_window.ui")[0]
-form_login = uic.loadUiType("login_dialog.ui")[0]
+# Get absolute path to resource, works for dev and for PyInstaller
+def resource_path(relative_path):
+    try:
+        base_path = getattr(sys, '_MEIPASS', os.getcwd())
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+form_class = uic.loadUiType(resource_path("main_window.ui"))[0]
+form_login = uic.loadUiType(resource_path("login_dialog.ui"))[0]
 
 sock = None
 
+# Message with unread notification
 def msg_to_string(msg):
     if msg[2] + msg[3] > 0:
         return "1 " + msg[0] + " : " + msg[1] 
     else:
         return "  " + msg[0] + " : " + msg[1] 
 
+# Module communicates with server 
 class MessageSender():
+    # initialize socket
     def __init__(self):
         global sock
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -84,6 +96,7 @@ class MessageSender():
         message = Message("signout", self.name)
         sock.send(pickle.dumps(message))
 
+# Thread module gets message from server
 class ReplyHandler(QThread):
     threadSignal = pyqtSignal(Message)
 
@@ -98,6 +111,7 @@ class ReplyHandler(QThread):
             if type(message) == Message:
                 self.threadSignal.emit(message)   
 
+# Timer used for friends' status update
 class TimerSignalSender(QThread):
     timerSignal = pyqtSignal()
 
@@ -119,6 +133,7 @@ class MainWindow(QMainWindow, form_class):
         self.receiver = None
         message_sender.get_friends_list()
         
+        # binding signal to slot
         self.reply_thread = ReplyHandler()
         self.reply_thread.threadSignal.connect(self.thread_signal_handler)
         self.reply_thread.start()
@@ -127,6 +142,8 @@ class MainWindow(QMainWindow, form_class):
         self.timer_thread.timerSignal.connect(self.timer_signal_handler)
         self.timer_thread.start()
 
+
+    # Slot getting signal from ReplyHandler
     @pyqtSlot(Message)
     def thread_signal_handler(self, message):
         if message.type == "request_friend":
@@ -149,7 +166,7 @@ class MainWindow(QMainWindow, form_class):
         elif message.type == "ping":
             sock.send(pickle.dumps(Message("pong", message_sender.name)))
     
-
+    # Gets selecting a friend signal
     @pyqtSlot(QListWidgetItem)
     def selectFriend(self, item):
         if item is not None:
@@ -157,6 +174,7 @@ class MainWindow(QMainWindow, form_class):
             # self.load_message_logs()
             message_sender.get_message_log(item.text())
 
+    # Gets timer signal
     @pyqtSlot()
     def timer_signal_handler(self):
         message_sender.get_status_list()
@@ -230,6 +248,7 @@ class MainWindow(QMainWindow, form_class):
         QMessageBox.about(self, "", msg)
         message_sender.get_friends_list()
 
+# Sign in checking
 class LoginDialog(QDialog, form_login):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -251,7 +270,7 @@ class LoginDialog(QDialog, form_login):
         password = self.password.text()
         response = message_sender.request_signup(username, password)
         self.textLabel.setText(response.payload)
-    
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     message_sender = MessageSender()
