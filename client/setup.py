@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 
-py_modules = ['PyQT5']
 setup(name='client',
     description='cn01',
     author='kimjh12',
-    py_modules = py_modules
+	packages=find_packages(),
+	install_requires=['pyqt5']
     )
