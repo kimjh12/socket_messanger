@@ -21,7 +21,9 @@ pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
-		  exclude_binaries=True,
+		  a.zipfiles,
+		  a.binaries,
+		  a.datas,
           name=app_name,
           debug=False,
           bootloader_ignore_signals=False,
@@ -30,10 +32,3 @@ exe = EXE(pyz,
           runtime_tmpdir=None,
           console=False
 		)
-coll = COLLECT(exe,
-		a.binaries,
-		a.zipfiles,
-		a.datas,
-		strip=False,
-		upx=True,
-		name=app_name)
